@@ -1,0 +1,19 @@
+package ${targetServicePackage}.interfaces;
+import ${targetServicePackage}.exceptions.ServiceRuntimeException;
+import ${targetServicePackage}.exceptions.ServiceSecurityViolation;
+import java.lang.Exception;
+import ${targetServicePackage}.valueobjects.${name}Object;
+import java.util.List;
+
+public interface ${name} {
+    public ${name}Object add${name}(${name}Object input) throws 
+        ServiceSecurityViolation, ServiceRuntimeException ;
+    public ${name}Object delete${name} (${name}Object keyObject) throws 
+        ServiceSecurityViolation, ServiceRuntimeException ;
+    public List getAll${name}() throws 
+        ServiceSecurityViolation, ServiceRuntimeException ;
+    public ${name}Object edit${name} (${name}Object newObject) throws 
+        ServiceSecurityViolation, ServiceRuntimeException ;
+    public ${name}Object display${name} (${name}Object keyObject) throws 
+        ServiceSecurityViolation, ServiceRuntimeException ;
+}

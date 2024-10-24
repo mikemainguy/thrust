@@ -1,0 +1,22 @@
+<%@ taglib uri="struts-tiles" prefix="tiles" %>
+<%@ taglib uri="struts-bean" prefix="bean" %>
+<%@ taglib uri="struts-html" prefix="html" %>
+<%@ taglib uri="struts-logic" prefix="logic" %>
+<h5>Menu</h5>
+#foreach ($dataModel in $dataModels)
+#foreach ($database in $dataModel.Databases)
+#foreach ($table1 in $database.Tables)
+#set ($tableJava = $table1.JavaName)
+
+#if ($table1.Description) 
+#set ($tableDesc = $table1.Description)
+#else
+#set ($tableDesc = $tableJava)
+#end
+<span class="menuItem">
+<html:link action="/${tableJava}Display">${tableDesc}</html:link>
+</span>
+#end
+#end
+#end
+  

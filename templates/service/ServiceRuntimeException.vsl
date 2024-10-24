@@ -1,0 +1,5 @@
+package ${targetServicePackage}.exceptions;
+
+public class ServiceRuntimeException extends Exception {
+
+}

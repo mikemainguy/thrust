@@ -1,0 +1,56 @@
+package ${targetApplicationPackage}.struts.forms;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
+
+public class ${name}ActionForm extends ActionForm {
+/**********************************************************************
+*  $table.Description corresponds to database $table.Name
+*  value Object in service Layer is named
+***********************************************************************/	
+#foreach ( $column in $table.Columns )    
+  #set ($name = $column.javaName)
+/**
+ *  $column.Description = $column.Name in table $table.Name
+ **/
+    protected String #dropCase($name);
+#end
+/**********************************************************************
+*
+***********************************************************************/	
+#foreach ( $column in $table.Columns )    
+  #set ($name = $column.javaName)
+    public String get${name}() {
+  	    return #dropCase($name);	
+    }
+    public void set${name}(String value) {
+  	    #dropCase($name) = value;
+    }
+
+
+#end
+
+
+/**
+ * Implement this method to reset the values on the form bean (mostly for sessions)
+ * @see org.apache.struts.action.ActionForm#reset(org.apache.struts.action.ActionMapping, javax.servlet.http.HttpServletRequest)
+ */
+	public void reset(ActionMapping mapping, HttpServletRequest request) {
+		super.reset(mapping, request);
+	}
+
+/**
+ * Implement this method to do any struts validation over and above that 
+ *   provided by the validator framework
+ * @see org.apache.struts.action.ActionForm#validate(org.apache.struts.action.ActionMapping, javax.servlet.http.HttpServletRequest)
+ */
+	public ActionErrors validate(
+		ActionMapping mapping,
+		HttpServletRequest request) {
+		return super.validate(mapping, request);
+	}
+
+}
+

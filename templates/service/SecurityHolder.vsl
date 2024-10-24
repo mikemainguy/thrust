@@ -1,0 +1,7 @@
+package ${targetServicePackage};
+import java.security.Principal;
+
+public interface SecurityHolder {
+		public void isUserInRole(String user);
+		public Principal getUserPrincipal();
+}

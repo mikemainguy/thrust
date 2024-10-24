@@ -1,0 +1,92 @@
+<%@ taglib uri="struts-bean" prefix="bean" %>
+<%@ taglib uri="struts-html" prefix="html" %>
+<%@ taglib uri="struts-logic" prefix="logic" %>
+
+<html:html locale="true">
+<head>
+<title>${project} ${name} Edit Screen</title>
+</head>
+<body>
+  <html:form action="${name}Input" method="POST" >
+
+    <table>
+    
+    #foreach ( $column in $table.Columns )
+          #set ($prefix = $column.getJavaName().substring(0,1).toLowerCase())
+          #set ($colname = $column.getJavaName().substring(1) )
+         
+
+      #if ($column.isPrimaryKey())
+        #set ($primaryKey="#dropCase( $column.javaName ) ")
+        #if ($column.isString())
+          #set ($sentinal = ".")
+        #end
+      #end
+      #if ($column.isForeignKey())
+        
+        <tr>
+		   <td>
+        	<table>
+			<tr><td><bean:message key="${project}.$table.JavaName.toLowerCase().$column.JavaName.toLowerCase()" />
+			</td><td>
+        
+            #set ($foreign = "$column.ForeignKey.ForeignTableName")
+            #set ($ftable = $database.getTable("$foreign"))
+            
+  			<html:select property="${prefix}${colname}">
+  			  <html:option value="a"/>
+  			</html:select>
+  	    	</td></tr>
+  	    	</table>
+  	      </td>
+  	    </tr>
+  	    
+      #elseif ( $column.isPrimitive() || $column.type=="CLOB" || $column.type=="CHAR" || $column.type=="VARCHAR" || $column.type=="DECIMAL" || $column.isString()  )
+        <tr>
+		  <td>
+			<table>
+			<tr><td><bean:message key="${project}.$table.JavaName.toLowerCase().$column.JavaName.toLowerCase()" />
+			</td><td>
+			  <html:text property="${prefix}${colname}"/>
+			  </td></tr>
+			  </table>
+	      </td>
+	     </tr>
+	     
+	  #elseif ($column.type=="DATE")
+	    
+	    <tr>
+		  <td>
+			<table>
+			<tr><td><bean:message key="${project}.$table.JavaName.toLowerCase().$column.JavaName.toLowerCase()"/>
+			</td><td>
+			<html:select property="${prefix}${colname}">
+				<html:option value="1">One</html:option>
+			</html:select>
+			</td></tr>
+			</table>
+	      </td>
+	     </tr>
+	     
+	  #else
+	    
+          <tr><td>
+		   $column.JavaName::$column.type
+          <!--
+            $column.JavaName is a $column.type and I dont''t know what to do with it.
+           -->
+         </td>
+        </tr>
+     
+        #end
+	#end
+	  
+    </table>
+##    <html:hidden property="${primaryKey}"/>
+	<html:submit property="action" value="save">save</html:submit>
+	<html:reset property="action" value="reset">reset</html:reset>
+	<html:cancel property="action" value="cancel">cancel</html:cancel>
+
+    </html:form>
+</body>
+</html:html>

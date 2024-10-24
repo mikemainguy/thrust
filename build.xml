@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Thrust" default="all" basedir=".">
+    <property file="build.properties"/>
+   
+    <!--<property file="torque.properties"/>-->
+    <path id="classpath">
+        <fileset dir="./lib">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+    <target name="init" depends="prepare-error">
+        <echo>Initializing Ant</echo>
+        <tstamp/>
+    </target>
+    <target name="clean" depends="init">
+      <delete dir="struts"/>
+      <delete dir="${dist}"/>
+
+    </target>
+    <target name="all">
+       <antcall target="clean"/>
+       <antcall target="struts-jsp-screens"/>
+       <antcall target="struts-base"/>
+       <antcall target="struts-service"/>
+       <antcall target="struts-compile"/>
+       <antcall target="struts-dist"/>
+    </target>
+    <target name="doc" depends="init">
+        <echo>
+        ************************************************************** 
+        * Creating Javadoc in ${doc} 
+        **************************************************************
+        </echo>
+        <mkdir dir="${doc}"/>
+        <javadoc sourcepath="${source}" destdir="${doc}" packagenames="com.*" use="true">
+            <classpath refid="classpath"/>
+        </javadoc>
+        <echo>
+        s************************************************************** 
+        * Javadoc Completed 
+        **************************************************************
+        </echo>
+    </target>
+
+    <target name="xdoc" depends="init">
+        <mkdir dir="{$dist}/doc"/>
+        <xslt classpath="webApplication/WEB-INF/badlib/xalan.jar" basedir="doc" destdir="dist/doc" extension=".html" style="style/apache.xsl">
+        </xslt>
+
+    </target>
+    <!--
+ ##########################################################################################
+      Run Junit test cases against code.
+      Note: you must put the junit.jar in 
+      /Program Files/IBM/Application Developer/plugins/org.eclipse.ant.core
+      and also modify plugin.xml to look as follows
+      
+	<runtime>
+ 	  	<library name="ant.jar">
+  	  		<export name="*"/>
+   		</library>
+    	<library name="antsupport.jar">
+     	 	<export name="*"/>
+   		</library>
+   		<library name="junit.jar">
+      		<export name="*"/>
+   		</library>
+   		<library name="jakarta-ant-1.3-optional.jar">
+      		<export name="*"/>
+   		</library>
+   </runtime>
+
+   ####
+   #!!! Note, it is significant that junit.jar must come BEFORE jakarta-ant-1.3-optional.jar
+   ####   
+ -->
+    <target name="test" depends="init">
+        <!--<java fork="yes" classname="junit.textui.TestRunner" 
+            taskname="junit" failonerror="true">
+            <arg value="com.kmart.websphere.framework.AllTests"/>
+  		  <classpath refid="classpath"/>
+  		</java>-->
+        <junit fork="no">
+            <classpath refid="classpath"/>
+            <test name="com.kmart.websphere.framework_0_1.AllTests" haltonfailure="no" outfile="result">
+                <formatter type="plain"/>
+            </test>
+        </junit>
+    </target>
+
+    <path id="torque-classpath">
+        <fileset dir="./lib">
+            <include name="**/*.jar"/>
+        </fileset>
+        <!--    <fileset dir="turbine/WEB-INF/classes"/> -->
+    </path>
+
+    <!--
+    The default.properties file will map old properties to the new ones along
+    with setting the correct defaults.
+  -->
+    <property resource="org/apache/torque/default.properties">
+        <classpath>
+            <path refid="torque-classpath"/>
+        </classpath>
+    </property>
+    <property name="build.properties" value="./build.properties"/>
+
+    <taskdef name="torque-data-model" classpathref="torque-classpath" classname="org.apache.torque.task.TorqueDataModelTask"/>
+
+    <target name="prepare">
+        <available classname="org.apache.torque.task.TorqueDataModelTask" 
+        property="TorqueDataModelTask.present">
+            <classpath refid="torque-classpath"/>
+        </available>
+
+    </target>
+
+    <target depends="prepare" name="prepare-error" unless="TorqueDataModelTask.present">
+        <echo>TorqueDataModelTask is not present! 
+        Please check to make sure that velocity.jar is in your classpath.</echo>
+    </target>
+
+    <target name="struts-output-skeleton">
+        <mkdir dir="${struts.outputDirectory}/WEB-INF/pages"/>
+        <mkdir dir="${struts.outputDirectory}/source/${torque.targetPackageDirectory}"/>
+
+        <mkdir dir="${struts.outputDirectory}/source/${torque.targetUtilDirectory}"/>
+        <mkdir dir="${struts.outputDirectory}/source/${torque.targetApplicationDirectory}/resources"/>
+        <mkdir dir="${struts.outputDirectory}/source/${torque.targetApplicationDirectory}/struts/forms"/>
+        <mkdir dir="${struts.outputDirectory}/source/${torque.targetApplicationDirectory}/struts/actions"/>
+
+        <mkdir dir="${struts.outputDirectory}/source/${torque.targetServiceDirectory}/interfaces"/>
+        <mkdir dir="${struts.outputDirectory}/source/${torque.targetServiceDirectory}/implementations/jdbc"/>
+        <mkdir dir="${struts.outputDirectory}/source/${torque.targetServiceDirectory}/valueobjects"/>
+        <mkdir dir="${struts.outputDirectory}/source/${torque.targetServiceDirectory}/exceptions"/>
+
+    </target>
+	<target name="struts-compile" depends="init">
+	    <mkdir dir="${struts.outputDirectory}/WEB-INF/classes"/>
+		<javac debug="true" srcdir="${struts.outputDirectory}/source" destdir="${struts.outputDirectory}/WEB-INF/classes">
+			 <classpath refid="classpath"/>
+		</javac>
+		<copy overwrite="true" todir="${struts.outputDirectory}/WEB-INF/classes">
+			<fileset dir="${struts.outputDirectory}/source">
+			   <include name="**/*.properties"/>
+			</fileset>
+		  
+		</copy>
+	</target>
+    <target name="struts-dist" depends="init,struts-compile">
+        <mkdir dir="${dist}"/>
+        <copy overwrite="true" todir="${dist}/WEB-INF/lib">
+          <fileset dir="lib" excludes="servlet.jar,servletapi-2.2.jar"/>
+          </copy>
+        <copy overwrite="true" todir="${dist}/WEB-INF">
+          <fileset dir="${struts.outputDirectory}/WEB-INF"/>
+        </copy>
+        
+        </target>
+
+    <target name="torque-object-model" depends="struts-output-skeleton">
+        <ant antfile="${torque.buildFile}" target="om"></ant>
+    </target>
+
+    
+    <target name="struts-jsp-screens" depends="init,struts-output-skeleton">
+        <torque-data-model contextProperties="./build.properties" 
+        	controlTemplate="Control.vm" 
+        	outputDirectory="${struts.outputDirectory}" 
+        	outputFile="generate.log" 
+        	targetDatabase="${torque.database}" 
+        	targetPackage="${torque.targetPackage}" 
+        	templatePath="templates/jsp">
+            <fileset dir="${torque.schema.dir}" includes="${torque.schema.pattern}"/>
+        </torque-data-model>
+    </target>
+ 
+ <target name="struts-base" depends="init,struts-output-skeleton">
+        <torque-data-model contextProperties="./build.properties" 
+        	controlTemplate="Control.vm" 
+        	outputDirectory="${struts.outputDirectory}" 
+        	outputFile="generate.log" 
+        	targetDatabase="${torque.database}" 
+        	targetPackage="${torque.targetPackage}" 
+        	templatePath="templates/struts">
+            <fileset dir="${torque.schema.dir}" includes="${torque.schema.pattern}"/>
+        </torque-data-model>
+        <mkdir dir="${struts.outputDirectory}/WEB-INF/tld"/>
+        <copy overwrite="true" todir="${struts.outputDirectory}/WEB-INF/tld">
+          <fileset dir="templates/static/tld"/>
+        </copy>
+		<copy overwrite="true" todir="${struts.outputDirectory}/WEB-INF/pages">
+          <fileset dir="templates/static/pages"/>
+        </copy>
+        <copy overwrite="true" todir="${struts.outputDirectory}/WEB-INF/templates">
+          <fileset dir="templates/static/templates"/>
+        </copy>
+
+    </target>
+
+    <target name="struts-service" depends="init,struts-output-skeleton">
+        <torque-data-model contextProperties="./build.properties" 
+        	controlTemplate="Control.vm" 
+        	outputDirectory="${struts.outputDirectory}" 
+        	outputFile="generate.log" 
+        	targetDatabase="${torque.database}" 
+        	targetPackage="${torque.targetPackage}" 
+        	templatePath="templates/service">
+            <fileset dir="${torque.schema.dir}" includes="${torque.schema.pattern}"/>
+        </torque-data-model>
+    </target>
+    
+ 	<target name="thrust-jar" depends="init,clean">
+		<mkdir dir="deploy"/>
+		<jar basedir="." destfile="deploy/thrust-${thrust.version}.jar">
+		  <exclude name="src/**"/>
+		  <exclude name="deploy/**"/>
+		  <exclude name="dist/**"/>
+		  <exclude name="struts/**" />
+		</jar>
+	</target>
+ 
+</project>

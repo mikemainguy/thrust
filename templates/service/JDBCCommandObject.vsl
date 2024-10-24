@@ -1,0 +1,377 @@
+package ${targetServicePackage}.implementations.jdbc;
+import java.sql.DriverManager;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import org.apache.commons.beanutils.BasicDynaBean;
+import org.apache.commons.beanutils.BasicDynaClass;
+import org.apache.commons.beanutils.DynaBean;
+import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.beanutils.ResultSetDynaClass;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import java.sql.DriverManager;
+
+/**
+ * 
+ * @author mmainguy Created Aug 22, 2003
+ * JDBCCommandObject
+ *
+ * Framework Application Class
+ *
+ * This is a Base Class for command objects that must access a 
+ * JDBC Data store.
+ * 
+ * It creates a shared datasource and basic SQL operations.
+ * 
+ */
+public abstract class JDBCCommandObject {
+	private static Log log = LogFactory.getLog(JDBCCommandObject.class);
+	
+	/**
+	 * Constructor for JDBCCommandObject
+	 * 
+	 */
+	private int fetchSize= 20;
+	private boolean lastPage= false;
+	private boolean firstPage= false;
+
+	protected Connection getDefaultConnection() {
+		Connection conn= null;
+		if (log.isDebugEnabled()) {
+			log.debug("Fetching Default SQL Connection");
+		}
+		try {
+		Class.forName("org.hsqldb.jdbcDriver");
+	
+			conn = DriverManager.getConnection("jdbc:hsqldb:./testData","sa","");
+			
+	//		conn= datafactory.getDefaultDataSource().getConnection();
+			writeSQLDebugInfo(conn);
+		} catch (Exception e) {
+			log.error(e.toString());
+			// ASAP: handle invalid sql connection retrieval
+		}
+		return conn;
+	}
+	/**
+	 * getConnection - get a connection base on the string name of a datasource
+	 * @param connectionName
+	 * @return Connection object
+	 * @see Connection
+	 */
+	protected Connection getConnection(String connectionName) {
+		Connection conn= null;
+		if (log.isDebugEnabled()) {
+			log.debug("Fetching SQL Connection named " + connectionName);
+		}
+		try {
+			conn= DriverManager.getConnection("");
+			//datafactory.getDataSource(connectionName).getConnection();
+			writeSQLDebugInfo(conn);
+		} catch (Exception e) {
+			log.error(e.toString());
+			// ASAP: handle invalid sql connection retrieval
+		}
+		return conn;
+	}
+	/**
+	 * Overloaded version of GetList that doesn't require any parameters.
+	 * Useful if you want to return every row.
+	 * 
+	 * @param sql SQL statement to execute
+	 * @return a list.
+	 */
+	protected List performReadQuery(String sql) throws Exception {
+		return performReadQuery(sql, null);
+	}
+	/**
+	 * getFirstItem - helper function that allows one to retrieve only the first
+	 * row of a resultset.  This is intended to be used when one expects only a single
+	 * row.
+	 * <br>
+	 * <b>NOTE</b>multiple rows are simply discarded and only the first row is returned.
+	 * <br>
+	 * <b>NOTE!!!</b> Right now, the function still creates an object with every single row
+	 * that the query returns.  Do not use this to just return one row with no parameters as it
+	 * will immensely chew up memory.  You <b>should</b> fully define your key so you only get
+	 * one row.
+	 * @param sql parameterized query string to be prepared and executed
+	 * @param params parameters that should be placed, in order, in the prepared statement.
+	 * @return Dynabean with properties from resultset row
+	 * @throws Exception7
+	 */
+	protected DynaBean getFirstItem(String sql, String[] params)
+		throws Exception {
+		List list= performReadQuery(sql, params);
+		DynaBean returnVal= null;
+		if (list != null) {
+			if (list.size() >= 1) {
+				returnVal= (DynaBean) list.get(0);
+				if (list.size() > 1) {
+					log.warn(
+						"Select statement <"
+							+ sql
+							+ "> returned more than one row, only expected one");
+				}
+			}
+		} else {
+			log.warn("Select statement <" + sql + "> returned null");
+		}
+		return returnVal;
+	}
+	private void writeSQLDebugInfo(Connection debugconn) {
+		if (log.isDebugEnabled()) {
+			try {
+				log.debug(
+					"Connecting to "
+						+ debugconn.getMetaData().getDriverName()
+						+ ","
+						+ debugconn.getMetaData().getDriverVersion());
+			} catch (SQLException sqlerr) {
+				log.warn(
+					"Unable to read connection meta data, this is probably a driver problem");
+				log.error(sqlerr.toString());
+			}
+		}
+	}
+	/**<p>
+	 * It simply calls getList(sql,params,0);
+	 * 
+	 * @see BasicDynaBean, DynaBean
+	 */
+	protected List performReadQuery(String sql, String[] params) throws Exception {
+		return performReadQuery(sql, params, 0);
+	}
+	protected int performModificationQuery(String sql, String[] params) throws Exception {
+		Connection conn= getDefaultConnection();
+		int resultCount= -1;
+		PreparedStatement myStatement= null;
+		try {
+			if (log.isDebugEnabled()) {
+				log.debug("Preparing " + sql);
+			}
+			myStatement= conn.prepareStatement(sql);
+			if (params != null) {
+				for (int i= 0; i < params.length; i++) {
+					myStatement.setString(i + 1, params[i]);
+					if (log.isDebugEnabled()) {
+						log.debug("Parameter = " + params[i]);
+					}
+				}
+			}
+			if (log.isDebugEnabled()) {
+				log.debug("  Executing");
+			}
+			resultCount= myStatement.executeUpdate();
+		} catch (SQLException e) {
+			log.error(e.toString());
+			throw e;
+			// ASAP: handle invalid resultset close exception
+		} finally {
+			closeDataObject(myStatement);
+			closeDataObject(conn);
+		}
+		return resultCount;
+	}
+	/**
+		 * closeConnection
+		 * @param conn the database connection that should be closed
+		 * usage 
+		 * 
+		 */
+	private static void closeDataObject(Connection conn) {
+		if (conn != null) {
+			try {
+				conn.close();
+			} catch (SQLException e) {
+				log.warn(e.toString());
+				// ASAP: handle invalid sql close exception
+			}
+		}
+	}
+	private static void closeDataObject(ResultSet results) {
+		if (results != null) {
+			try {
+				results.close();
+			} catch (SQLException e) {
+				log.warn(e.toString());
+				// ASAP: handle invalid resultset close exception
+			}
+		}
+	}
+	private static void closeDataObject(Statement inStatement) {
+		if (inStatement != null) {
+			try {
+				inStatement.close();
+			} catch (SQLException e) {
+				log.warn(e.toString());
+				// ASAP: handle invalid resultset close exception
+			}
+		}
+	}
+	/**
+		 * return a rowset from a sql statement
+		 * @param sql sql statement including <code>where</code> clause to be executed
+		 * @return a List object with each row as a DynaBean instance
+		 * 
+		 * <p>
+		 * this function will fetch a connection, execute sql, return the rows,
+		 * and close the connection.  The returned Object is a List with
+		 * DynaBean instances.  DynaBeans are dynamic Java Beans.  
+		 * <p><i>(ed note:  It's basically a Hashtable with some metadata functions)</i>
+		 */
+	protected List performReadQuery(String sql, String[] params, int page)
+		throws Exception {
+		/**
+		* conn is our sql connection
+		* myStatement is our statement
+		* rows is our resultset that comes back
+		*  
+		*/
+		Connection conn= getDefaultConnection();
+		if (conn == null) {
+			log.error("Error getting Connection");
+			throw new Exception("Error, did not get default database connection");
+		}
+		
+		//Are we returning the first page?
+		if (page == 1) {
+			firstPage= true;
+		}
+		/**
+		 * returnList is an ArrayList that will ultimately hold all the rows
+		 * we fetch
+		 */
+		ArrayList returnList= new ArrayList();
+		PreparedStatement myStatement= null;
+		ResultSet rows= null;
+		boolean noParameters= true;
+		ResultSetDynaClass results= null;
+		try {
+			if (log.isDebugEnabled()) {
+				log.debug("Preparing " + sql);
+			}
+			myStatement= conn.prepareStatement(sql);
+			/**
+			 * if we've passed in parameters, set them in order from
+			 * the params array
+			 */
+			if (params != null) {
+				for (int i= 0; i < params.length; i++) {
+					// only set a param if it is not null and not empty
+					if (params[i] != null && (!params[i].trim().equals(""))) {
+						myStatement.setString(i + 1, params[i]);
+						noParameters= false;
+						if (log.isDebugEnabled()) {
+							log.debug("Parameter set to :" + params[i]);
+						}
+					} else {
+						if (log.isWarnEnabled()){
+							if (params[i]==null){
+								log.warn("param number " +i+ " is null");	
+							} else {
+								log.warn("param number " +i+ " is empty");	
+							}
+							
+						}
+						
+					}
+				}
+			} else {
+				//this means params==null which represents a call with a null params object
+				noParameters= false;
+			}
+		} catch (Exception e) {
+			log.warn("Problem Parsing Parameters");
+			log.warn(e.toString());
+		}
+		if (noParameters) {
+			// LOW: Early return, do we want to do this?
+			log.warn("no useful parameters passed in, null returned");
+			closeDataObject(myStatement);
+			closeDataObject(conn);
+			return null;
+		}
+		try {
+			rows= myStatement.executeQuery();
+			results= new ResultSetDynaClass(rows);
+			BasicDynaClass bdc=
+				new BasicDynaClass(
+					"dataRow",
+					BasicDynaBean.class,
+					results.getDynaProperties());
+			Iterator rowIter= results.iterator();
+			DynaBean row;
+			DynaBean newRow;
+			/**
+			 * OK, FYI row will always correspond to the current row in the underlying
+			 * resultset.  newRow is a new Object Instance with the same values.
+			 * 
+			 * We copy the values into the new object.
+			 */
+			int currRow= 0;
+			if (page != 0) {
+				while ((page > (currRow++ / this.fetchSize))
+					&& rowIter.hasNext()) {
+					rowIter.next();
+				}
+				if (!rowIter.hasNext()) {
+					lastPage= true;
+				}
+				currRow= 0;
+			}
+			/***
+			 * Note how we nest the logic in this while...
+			 * the short circuit in the second half allows us to save a
+			 * comparison when we are returning all rows
+			 */
+			while (rowIter.hasNext()
+				&& ((page == 0) || (currRow <= fetchSize))) {
+				row= (DynaBean) rowIter.next();
+				newRow= bdc.newInstance();
+				PropertyUtils.copyProperties(newRow, row);
+				returnList.add(newRow);
+			}
+		} catch (Exception e) {
+			log.error(e.toString());
+			// LOW: What happens if we execute a query and we get an exception?
+		} finally {
+			closeDataObject(rows);
+			closeDataObject(myStatement);
+			closeDataObject(conn);
+		}
+		return returnList;
+	}
+	/**
+	 * @return
+	 */
+	public int getFetchSize() {
+		return fetchSize;
+	}
+	/**
+	 * @return
+	 */
+	public boolean isFirstPage() {
+		return firstPage;
+	}
+	/**
+	 * @return
+	 */
+	public boolean isLastPage() {
+		return lastPage;
+	}
+	/**
+	 * @param i
+	 */
+	public void setFetchSize(int i) {
+		fetchSize= i;
+	}
+}

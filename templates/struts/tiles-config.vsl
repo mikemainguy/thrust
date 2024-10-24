@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+ <!DOCTYPE tiles-definitions PUBLIC
+       "-//Apache Software Foundation//DTD Tiles Configuration 1.1//EN"
+       "http://jakarta.apache.org/struts/dtds/tiles-config_1_1.dtd">
+<!--
+     This is a blank Tiles definition file with a commented example.
+-->
+
+<tiles-definitions>
+	<definition 
+    	name="default-three-pane-layout" 
+    	path="/WEB-INF/templates/default-three-pane-layout.jsp">
+	    <put name="header" value="/WEB-INF/pages/default-header.jsp"/>
+	    <put name="menu" value="/WEB-INF/pages/default-menu.jsp"/>
+	    <put name="selector" value="/WEB-INF/pages/default-selector.jsp"/>
+	    <put name="body" value=""/>
+	    <put name="footer" value="/WEB-INF/pages/default-footer.jsp"/>
+	</definition>
+	
+	<definition 
+    	name="default-top-bottom-layout" 
+    	path="/WEB-INF/templates/top-bottom-layout.jsp">
+	    <put name="header" value="/WEB-INF/pages/default-header.jsp"/>
+	    <put name="menu" value="/WEB-INF/pages/default-menu.jsp"/>
+	    <put name="body" value=""/>
+	    <put name="footer" value="/WEB-INF/pages/default-footer.jsp"/>
+	</definition>
+	
+	<definition name="welcome-three-pane" extends="default-three-pane-layout">
+    	<put 
+     	   name="body" 
+     	   value="/WEB-INF/pages/Welcome.jsp"/>
+	</definition>
+	<definition name="welcome-top-bottom" extends="default-three-pane-layout">
+    	<put 
+     	   name="body" 
+     	   value="/WEB-INF/pages/Welcome.jsp"/>
+	</definition>
+  #foreach ($dataModel in $dataModels)
+    #foreach ($database in $dataModel.Databases)
+      #foreach ($table1 in $database.Tables)
+        #set ($table = $table1.JavaName)
+		
+			<definition name="tiled${project}${table}InputScreen" extends="default-three-pane-layout">
+  		  	<put 
+    	 	   name="body" 
+     		   value="/WEB-INF/pages/${table}InputScreen.jsp"/>
+			</definition>
+
+			<definition name="tiled${project}${table}DisplayScreen" extends="default-three-pane-layout">
+  		  	<put 
+    	 	   name="body" 
+     		   value="/WEB-INF/pages/${table}DisplayScreen.jsp"/>
+			</definition>
+
+  	  #end
+    #end
+  #end
+</tiles-definitions>
+

@@ -1,0 +1,8 @@
+#foreach ($dataModel in $dataModels)
+#foreach ($database in $dataModel.Databases)
+#foreach ($table in $database.Tables)
+#foreach ($column in $table.columns)
+${project}.$table.JavaName.toLowerCase().$column.JavaName.toLowerCase()=#messageKey($column)
+#end  
+#----------------
+#end #end #end

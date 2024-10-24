@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+    <classpathentry kind="src" path="struts/source"/>
+    <classpathentry kind="src" path="templates/static/java"/>
+    <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+    <classpathentry kind="lib" path="lib/servlet.jar"/>
+    <classpathentry kind="lib" path="lib/struts.jar"/>
+    <classpathentry kind="lib" path="lib/commons-beanutils-1.4.1.jar"/>
+    <classpathentry kind="lib" path="lib/commons-logging-1.0.2.jar"/>
+    <classpathentry kind="lib" path="lib/hsqldb-1.7.0.jar"/>
+    <classpathentry kind="lib" path="lib/torque-3.0.jar"/>
+    <classpathentry kind="lib" path="lib/mm.mysql-2.0.13-bin.jar"/>
+    <classpathentry kind="output" path="struts/WEB-INF/classes"/>
+</classpath>

@@ -1,0 +1,150 @@
+***************************
+Creating Service Layer
+***************************
+#set ( $servicepath = ${targetServiceDirectory} )
+#set ($basePath = $generator.OutputPath)
+
+#set ( $fname = "source/${servicepath}/ServiceLocator.java" )
+$generator.parse("ServiceLocator.vsl","$fname","dataModels",$dataModels)
+
+#set ( $fname = "source/${servicepath}/SecurityHolder.java" )
+$generator.parse("SecurityHolder.vsl","$fname","dataModels",$dataModels)
+
+#set ( $fname = "source/${servicepath}/exceptions/ServiceSecurityViolation.java" )
+$generator.parse("ServiceSecurityViolation.vsl","$fname","dataModels",$dataModels)
+
+#set ( $fname = "source/${servicepath}/exceptions/ServiceRuntimeException.java" )
+$generator.parse("ServiceRuntimeException.vsl","$fname","dataModels",$dataModels)
+
+#set ( $fname = "source/${servicepath}/implementations/jdbc/JDBCCommandObject.java" )
+$generator.parse("JDBCCommandObject.vsl","$fname","table",$tbl)
+
+#foreach ($dataModel in $dataModels)
+  #foreach ($database in $dataModel.Databases)
+    #foreach ($tbl in $database.Tables)
+      #if (!$tbl.isForReferenceOnly())
+        $tbl.Name
+        #set ($primaryKeyField = "")
+        #set ($primaryKeyGetter = "")
+        #set ($primaryKeyJavaName = "")
+        #set ($name = $tbl.JavaName)
+        #set ( $firstcap=$tbl.JavaName )
+  
+        #set ( $fname = "source/${servicepath}/implementations/jdbc/${name}Impl.java" )
+	    $generator.parse("CommandObject.vsl","$fname","table",$tbl)
+
+        #set ( $fname = "source/${servicepath}/interfaces/${name}.java" )
+	    $generator.parse("ServiceInterface.vsl","$fname","table",$tbl)
+
+        #set ( $fname = "source/${servicepath}/valueobjects/${name}Object.java" )
+	    $generator.parse("ValueObject.vsl","$fname","table",$tbl)
+
+     #end
+    #end
+  #end
+#end
+
+
+#macro (dropCase $dataValue) 
+ #set ($prefix = $dataValue.substring(0,1).toLowerCase())
+ #set ($colname = $dataValue.substring(1) )$prefix$colname#end
+
+#macro ( colWriteAll $prefix $tabVal $suffix $suffixlast)
+#set ($colnum = $tabVal.numColumns)
+#foreach ( $column in $tabVal.Columns )
+#set ($colnum = $colnum - 1)    
+#if  ($colnum != 0) 
+$prefix $column.name.toUpperCase() $suffix
+#else
+$prefix $column.name.toUpperCase() $suffixlast
+#end 
+#end
+#end
+
+
+#macro ( colWriteKeys $prefix $tabVal $suffix $suffixlast)
+#set ($colnum = $tabVal.numColumns)
+#set ($keyCount = 0)
+#foreach ( $column in $tabVal.Columns )
+#if ($column.isPrimaryKey()) #set ($keyCount = $keyCount + 1) #end
+#end
+
+#foreach ( $column in $tabVal.Columns )
+#if  ($column.isPrimaryKey())
+#set ($keyCount = $keyCount - 1 )
+#if ($keyCount > 0) 
+$prefix $column.name.toUpperCase() $suffix
+#else
+$prefix $column.name.toUpperCase() $suffixlast
+#end 
+#end
+#end
+#end
+
+#macro ( colWriteJavaKeys $prefix $tabVal $suffix $suffixlast)
+#set ($colnum = $tabVal.numColumns)
+#set ($keyCount = 0)
+#foreach ( $column in $tabVal.Columns )
+#if ($column.isPrimaryKey()) #set ($keyCount = $keyCount + 1) #end
+#end
+
+#foreach ( $column in $tabVal.Columns )
+#if  ($column.isPrimaryKey())
+#set ($keyCount = $keyCount - 1 )
+#if ($keyCount > 0) 
+$prefix$column.JavaName$suffix
+#else
+$prefix$column.JavaName$suffixlast
+#end 
+#end
+#end
+#end
+
+#macro ( colWriteNonKeys $prefix $tabVal $suffix $suffixlast)
+#set ($colnum = $tabVal.numColumns)
+#set ($keyCount = 0)
+
+#foreach ( $column in $tabVal.Columns )
+#if ($column.isPrimaryKey()) #else #set ($keyCount = $keyCount + 1) #end
+#end
+
+#foreach ( $column in $tabVal.Columns )
+#if  ($column.isPrimaryKey()) #else
+#set ($keyCount = $keyCount - 1)
+#if ($keyCount > 0) 
+$prefix $column.name.toUpperCase() $suffix
+#else
+$prefix $column.name.toUpperCase() $suffixlast
+#end 
+#end
+#end
+#end
+
+#macro ( colToken $tabVal $suffix $suffixlast)
+    #set ($colnum = $tabVal.numColumns)
+	#foreach ( $column in $tabVal.Columns )
+		#set ($colnum = $colnum - 1)    
+		#if  ($colnum != 0) $suffix
+		#else $suffixlast	
+		#end 
+	#end          
+#end
+
+#macro ( colJavaName $prefix $tabVal $suffix $suffixlast)
+    #set ($colnum = $tabVal.numColumns)
+	#foreach ( $column in $tabVal.Columns )
+		#set ($colnum = $colnum - 1)    
+		#if  ($colnum != 0) $prefix #dropCase( $column.javaName )$suffix
+		#else $prefix #dropCase( $tabVal.javaName ) $suffixlast	
+		#end 
+	#end          
+#end
+
+#macro ( messageKey $column)
+#if (!$column.Description)
+$column.JavaName
+#else
+$column.Description  
+#end
+#end
+

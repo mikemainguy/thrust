@@ -1,0 +1,25 @@
+package ${targetServicePackage}.valueobjects;
+import java.io.Serializable;
+
+public class ${name}Object implements Serializable {
+/**********************************************************************
+*
+***********************************************************************/	
+#foreach ( $column in $table.Columns )    
+  #set ($name = $column.javaName)
+    protected String #dropCase($name);
+#end
+/**********************************************************************
+*
+***********************************************************************/	
+
+#foreach ( $column in $table.Columns )    
+  #set ($name = $column.javaName)
+    public String get${name}() {
+  	    return #dropCase($name);	
+    }
+    public void set${name}(String value) {
+  	    #dropCase($name) = value;
+    }
+#end
+}

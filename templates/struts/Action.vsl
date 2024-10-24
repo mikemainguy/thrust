@@ -1,0 +1,51 @@
+/*
+ * Created on Oct 6, 2003
+ */
+package ${targetApplicationPackage}.struts.actions;
+import ${targetApplicationPackage}.struts.forms.${name}ActionForm;
+import ${targetServicePackage}.ServiceLocator;
+import ${targetServicePackage}.interfaces.${name};
+import ${targetServicePackage}.valueobjects.${name}Object;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.struts.action.Action;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.commons.beanutils.BeanUtils;
+
+/**
+ * @author mmainguy 
+ * ${name}${crud}Action
+ * @
+ *
+ * Framework Application Class
+ **/
+public class ${name}${crud}Action extends Action {
+
+	/**
+	 * @see org.apache.struts.action.Action#execute(org.apache.struts.action.ActionMapping, org.apache.struts.action.ActionForm, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+	 */
+	public ActionForward execute(
+		ActionMapping mapping,
+		ActionForm form,
+		HttpServletRequest request,
+		HttpServletResponse response)
+		throws Exception {
+		${name} serviceInterface = ServiceLocator.get${name}Service();
+		${name}Object workingObject = new ${name}Object();
+		BeanUtils.copyProperties(workingObject,form);
+		if (request.getMethod().equals("POST")) {
+ 		workingObject = serviceInterface.#dropCase(${crud})${name}(workingObject);
+		} else {
+		workingObject = serviceInterface.display${name}(workingObject);
+		}						
+		BeanUtils.copyProperties(form, workingObject);
+		//put action implementation in here
+		return mapping.findForward("display");
+		
+	}
+
+}

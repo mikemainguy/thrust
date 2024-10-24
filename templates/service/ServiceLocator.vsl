@@ -1,0 +1,38 @@
+/*
+ * Created on Oct 6, 2003
+ *
+ * To change the template for this generated file go to
+ * Window&gt;Preferences&gt;Java&gt;Code Generation&gt;Code and Comments
+ */
+package ${targetServicePackage};
+import ${targetServicePackage}.SecurityHolder;
+import org.apache.commons.beanutils.BeanUtils;
+#foreach ($dataModel in $dataModels)
+#foreach ($database in $dataModel.Databases)
+#foreach ($table in $database.Tables) 
+#set ($table1 = $table.JavaName)
+import ${targetServicePackage}.interfaces.${table1};
+import ${targetServicePackage}.implementations.jdbc.${table1}Impl;
+#end
+#end
+#end
+
+/**
+ * @author mmainguy Created Oct 6, 2003
+ * StrutsToServiceDelegate
+ * @
+ *
+ * Framework Application Class
+ **/
+public class ServiceLocator {
+#foreach ($dataModel in $dataModels)
+#foreach ($database in $dataModel.Databases)
+#foreach ($table in $database.Tables) 
+#set ($table1 = $table.JavaName)
+	public static $table.JavaName get${table1}Service () {
+		return new ${table1}Impl();
+	}
+#end
+#end
+#end
+}
